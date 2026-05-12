@@ -1,7 +1,7 @@
 swagger: "2.0"
 info:
-  title: Bank Argent API - Transactions
-  description: Proposed API for managing user transactions
+  title: Bank Argent API - Transactions Extension
+  description: Additional endpoints for transaction management
   version: "1.0.0"
 
 host: localhost:3001
@@ -10,48 +10,81 @@ schemes:
   - http
 
 paths:
-  /user/transactions:
+  /transactions:
     get:
       security:
         - Bearer: []
       tags:
-        - Transactions
-      summary: Get all user transactions
-      description: Retrieve all transactions for the current user
+        - Transaction Module
+      summary: Get all transactions for current user
+      description: Retrieve all transactions for the current month, optionally filtered by account
       parameters:
-        - in: header
-          name: Authorization
+        - name: Authorization
+          in: header
           type: string
           required: true
-          description: Bearer token
+        - name: month
+          in: query
+          type: string
+          required: false
+          description: Filter by month (YYYY-MM)
+        - name: accountId
+          in: query
+          type: integer
+          required: false
+          description: Filter by account ID
+      produces:
+        - application/json
       responses:
         "200":
           description: Transactions retrieved successfully
           schema:
-            type: array
-            items:
-              $ref: "#/definitions/Transaction"
+            $ref: "#/definitions/Transactions"
         "401":
           description: Unauthorized
         "500":
           description: Server error
 
-  /user/transactions/{transactionId}:
+    post:
+      security:
+        - Bearer: []
+      tags:
+        - Transaction Module
+      summary: Create a transaction
+      description: Add a new transaction
+      parameters:
+        - name: Authorization
+          in: header
+          type: string
+          required: true
+        - in: body
+          name: transaction
+          required: true
+          schema:
+            $ref: "#/definitions/Transaction"
+      responses:
+        "201":
+          description: Transaction created
+          schema:
+            $ref: "#/definitions/Transaction"
+        "400":
+          description: Invalid input
+
+  /transaction/{idTransaction}:
     get:
       security:
         - Bearer: []
       tags:
-        - Transactions
-      summary: Get a transaction
-      description: Retrieve a specific transaction by ID
+        - Transaction Module
+      summary: Get a specific transaction
       parameters:
-        - in: path
-          name: transactionId
-          type: integer
-          required: true
-        - in: header
-          name: Authorization
+        - name: Authorization
+          in: header
           type: string
+          required: true
+        - name: idTransaction
+          in: path
+          type: integer
           required: true
       responses:
         "200":
@@ -65,17 +98,17 @@ paths:
       security:
         - Bearer: []
       tags:
-        - Transactions
-      summary: Update transaction
-      description: Update category or notes of a transaction
+        - Transaction Module
+      summary: Update a transaction
+      description: Update category or note
       parameters:
-        - in: path
-          name: transactionId
-          type: integer
-          required: true
-        - in: header
-          name: Authorization
+        - name: Authorization
+          in: header
           type: string
+          required: true
+        - name: idTransaction
+          in: path
+          type: integer
           required: true
         - in: body
           name: body
@@ -89,14 +122,27 @@ paths:
             $ref: "#/definitions/Transaction"
         "400":
           description: Invalid input
-        "401":
-          description: Unauthorized
 
-securityDefinitions:
-  Bearer:
-    type: apiKey
-    name: Authorization
-    in: header
+    delete:
+      security:
+        - Bearer: []
+      tags:
+        - Transaction Module
+      summary: Delete a transaction
+      parameters:
+        - name: Authorization
+          in: header
+          type: string
+          required: true
+        - name: idTransaction
+          in: path
+          type: integer
+          required: true
+      responses:
+        "204":
+          description: Transaction deleted
+        "404":
+          description: Transaction not found
 
 definitions:
   Transaction:
@@ -104,32 +150,28 @@ definitions:
     properties:
       id:
         type: integer
-        example: 1
       date:
         type: string
-        example: "2023-10-01"
-      description:
-        type: string
-        example: "Grocery store"
       amount:
         type: number
-        example: 50.25
-      balance:
-        type: number
-        example: 1200.50
+      description:
+        type: string
       category:
         type: string
-        example: "Food"
-      notes:
+      note:
         type: string
-        example: "Weekly groceries"
+      accountId:
+        type: integer
+
+  Transactions:
+    type: array
+    items:
+      $ref: "#/definitions/Transaction"
 
   TransactionUpdate:
     type: object
     properties:
       category:
         type: string
-        example: "Food"
-      notes:
+      note:
         type: string
-        example: "Updated note"
